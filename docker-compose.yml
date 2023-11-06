@@ -1,0 +1,59 @@
+version: '3.9'
+
+networks:
+  idm:
+  idm-test:
+
+services:
+  dev:
+    container_name: idm-dev
+    build:
+      context: .
+      dockerfile: ./build/dockerfiles/golang/Dockerfile
+      target: golang_dev
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    ports:
+      - ${GRPC_PORT}:${GRPC_PORT}
+      - "40000:40000"
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - idm
+  prod:
+    container_name: idm
+    build:
+      context: .
+      dockerfile: ./build/dockerfiles/golang/Dockerfile
+      target: golang_prod
+    env_file:
+      - .env
+    ports:
+      - ${GRPC_PORT}:${GRPC_PORT}
+      - "40000:40000"
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - idm
+  test:
+    container_name: idm-test
+    build:
+      context: .
+      dockerfile: ./build/dockerfiles/golang/Dockerfile
+      target: golang_test
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    networks:
+      - idm-test
+
+volumes:
+  idm: { }
+  idm-test: { }
