@@ -7,9 +7,10 @@ import (
 )
 
 type Claims struct {
-	Type      string `json:"type,omitempty"`
+	Type      string `json:"typ,omitempty"`
 	ExpiresAt int64  `json:"exp,omitempty"`
 	Id        string `json:"jti,omitempty"`
+	IssuedAt  int64  `json:"iat,omitempty"`
 }
 
 func (c *Claims) verifyExp() bool {

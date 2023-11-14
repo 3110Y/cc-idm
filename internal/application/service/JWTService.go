@@ -48,6 +48,7 @@ func (g *JWTService) getAccess(id string) (*string, error) {
 			Type:      ACCESS,
 			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
 			Id:        id,
+			IssuedAt:  time.Now().Unix(),
 		})
 	access, err := token.SignedString(g.TLSKey.Key)
 	if err != nil {
@@ -62,6 +63,7 @@ func (g *JWTService) getRefresh(id string) (*string, error) {
 			Type:      REFRESH,
 			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
 			Id:        id,
+			IssuedAt:  time.Now().Unix(),
 		})
 	refresh, err := token.SignedString(g.TLSKey.Key)
 	if err != nil {
@@ -106,14 +108,17 @@ func (g *JWTService) FromLoginAndPassword(
 }
 
 func (g *JWTService) FromRefresh(refresh string) (*dto.JWTDTO, error) {
-	claimsJWT, err := g.parse(refresh)
+	a, err := g.parse(refresh)
 	if err != nil {
 		return nil, err
 	}
-	if claimsJWT.Type != REFRESH {
+	if a.Type != REFRESH {
 		return nil, errors.New("token is not refresh")
 	}
-	return g.getJWT(claimsJWT.Id)
+	if a.IssuedAt > time.Now().Unix() {
+		return nil, errors.New("token invalid")
+	}
+	return g.getJWT(a.Id)
 }
 
 func (g *JWTService) IsValidAccess(token string) error {
@@ -127,6 +132,9 @@ func (g *JWTService) IsValidAccess(token string) error {
 	}
 	if a.Type != ACCESS {
 		return errors.New("token is not access")
+	}
+	if a.IssuedAt > time.Now().Unix() {
+		return errors.New("token invalid")
 	}
 	return nil
 }
@@ -142,6 +150,9 @@ func (g *JWTService) IsValidRefresh(token string) error {
 	}
 	if a.Type != REFRESH {
 		return errors.New("token is not refresh")
+	}
+	if a.IssuedAt > time.Now().Unix() {
+		return errors.New("token invalid")
 	}
 	return nil
 }

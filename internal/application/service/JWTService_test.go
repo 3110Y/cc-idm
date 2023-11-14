@@ -63,7 +63,7 @@ func TestJWTService_getAccess(t *testing.T) {
 	defer finish()
 	access, err := service.getAccess(id)
 	assert.Nil(t, err)
-	assert.Len(t, *access, 186)
+	assert.Len(t, *access, 207)
 	a := claims.Claims{}
 	token, err := jwt.ParseWithClaims(*access, &a, service.keyFunc)
 	assert.Nil(t, err)
@@ -77,7 +77,7 @@ func TestJWTService_getRefresh(t *testing.T) {
 	defer finish()
 	access, err := service.getRefresh(id)
 	assert.Nil(t, err)
-	assert.Len(t, *access, 187)
+	assert.Len(t, *access, 208)
 	a := claims.Claims{}
 	token, err := jwt.ParseWithClaims(*access, &a, service.keyFunc)
 	assert.Nil(t, err)
@@ -91,8 +91,8 @@ func TestJWTService_getJWT(t *testing.T) {
 	defer finish()
 	jwtStruct, err := service.getJWT(id)
 	assert.Nil(t, err)
-	assert.Len(t, jwtStruct.Refresh, 187)
-	assert.Len(t, jwtStruct.Access, 186)
+	assert.Len(t, jwtStruct.Refresh, 208)
+	assert.Len(t, jwtStruct.Access, 207)
 }
 
 func TestJWTService_FromLoginAndPassword(t *testing.T) {
@@ -105,8 +105,8 @@ func TestJWTService_FromLoginAndPassword(t *testing.T) {
 	client.EXPECT().Login(ctx, email, phone, password).Return(utlits.Pointer("123"), nil)
 	jwtToken, err := service.FromLoginAndPassword(ctx, email, phone, password)
 	assert.Nil(t, err)
-	assert.Len(t, jwtToken.Access, 186)
-	assert.Len(t, jwtToken.Refresh, 187)
+	assert.Len(t, jwtToken.Access, 207)
+	assert.Len(t, jwtToken.Refresh, 208)
 }
 
 func TestJWTService_parse(t *testing.T) {
@@ -117,6 +117,7 @@ func TestJWTService_parse(t *testing.T) {
 		&claims.Claims{
 			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
 			Id:        id,
+			IssuedAt:  time.Now().Unix(),
 		})
 	access, err := token.SignedString(service.TLSKey.Key)
 	assert.Nil(t, err)
@@ -134,12 +135,45 @@ func TestJWTService_FromRefresh(t *testing.T) {
 			Type:      REFRESH,
 			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
 			Id:        id,
+			IssuedAt:  time.Now().Unix(),
 		})
 	refresh, err := token.SignedString(service.TLSKey.Key)
 	jwtToken, err := service.FromRefresh(refresh)
 	assert.Nil(t, err)
-	assert.Len(t, jwtToken.Access, 186)
-	assert.Len(t, jwtToken.Refresh, 187)
+	assert.Len(t, jwtToken.Access, 207)
+	assert.Len(t, jwtToken.Refresh, 208)
+}
+
+func TestJWTService_IsValidAccessExpired(t *testing.T) {
+	id := "123"
+	finish, service, _ := prepare(t)
+	defer finish()
+	token := jwt.NewWithClaims(jwt.SigningMethodES256,
+		&claims.Claims{
+			Type:      ACCESS,
+			ExpiresAt: time.Now().Add(-15 * time.Minute).Unix(),
+			Id:        id,
+			IssuedAt:  time.Now().Unix(),
+		})
+	refresh, err := token.SignedString(service.TLSKey.Key)
+	err = service.IsValidAccess(refresh)
+	assert.NotNil(t, err)
+}
+
+func TestJWTService_IsValidAccessFuture(t *testing.T) {
+	id := "123"
+	finish, service, _ := prepare(t)
+	defer finish()
+	token := jwt.NewWithClaims(jwt.SigningMethodES256,
+		&claims.Claims{
+			Type:      ACCESS,
+			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
+			Id:        id,
+			IssuedAt:  time.Now().Add(15 * time.Minute).Unix(),
+		})
+	refresh, err := token.SignedString(service.TLSKey.Key)
+	err = service.IsValidAccess(refresh)
+	assert.NotNil(t, err)
 }
 
 func TestJWTService_IsValidAccess(t *testing.T) {
@@ -151,6 +185,7 @@ func TestJWTService_IsValidAccess(t *testing.T) {
 			Type:      ACCESS,
 			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
 			Id:        id,
+			IssuedAt:  time.Now().Unix(),
 		})
 	refresh, err := token.SignedString(service.TLSKey.Key)
 	err = service.IsValidAccess(refresh)
@@ -166,6 +201,7 @@ func TestJWTService_IsValidRefresh(t *testing.T) {
 			Type:      REFRESH,
 			ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
 			Id:        id,
+			IssuedAt:  time.Now().Unix(),
 		})
 	refresh, err := token.SignedString(service.TLSKey.Key)
 	err = service.IsValidRefresh(refresh)
