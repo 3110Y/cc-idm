@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package idmService;
+
+option go_package = "github.com/3110Y/cc-idm;idmGRPC";
+
+service IDMService {
+  rpc FromLoginAndPassword(ProfileEmailPhonePassword) returns(AccessAndRefresh);
+  rpc FromRefresh(Refresh) returns(AccessAndRefresh);
+  rpc IsValidAccess(Access) returns(EmptyResponse);
+  rpc IsValidRefresh(Refresh) returns(EmptyResponse);
+}
+
+message ProfileEmailPhonePassword {
+  string email = 1;
+  uint64 phone = 2;
+  string password = 3;
+}
+
+message AccessAndRefresh {
+  string Access = 1;
+  string Refresh = 2;
+}
+
+message Refresh {
+  string Refresh = 2;
+}
+
+message Access {
+  string Access = 2;
+}
+
+message EmptyResponse {
+}
