@@ -6,6 +6,8 @@ import (
 	"context"
 	"github.com/3110Y/cc-idm/internal/application/dto"
 	"github.com/3110Y/cc-idm/pkg/idmGRPC"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type JWTServiceInterface interface {
@@ -27,7 +29,7 @@ func NewIdmRPC(JWTService JWTServiceInterface) *IdmRPC {
 func (c *IdmRPC) FromLoginAndPassword(ctx context.Context, in *idmGRPC.ProfileEmailPhonePassword) (*idmGRPC.AccessAndRefresh, error) {
 	JWT, err := c.JWTService.FromLoginAndPassword(ctx, in.Email, in.Phone, in.Password)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 	return &idmGRPC.AccessAndRefresh{
 		Access:  JWT.Access,
@@ -38,7 +40,7 @@ func (c *IdmRPC) FromLoginAndPassword(ctx context.Context, in *idmGRPC.ProfileEm
 func (c *IdmRPC) FromRefresh(_ context.Context, in *idmGRPC.Refresh) (*idmGRPC.AccessAndRefresh, error) {
 	JWT, err := c.JWTService.FromRefresh(in.Refresh)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 	return &idmGRPC.AccessAndRefresh{
 		Access:  JWT.Access,
@@ -46,18 +48,18 @@ func (c *IdmRPC) FromRefresh(_ context.Context, in *idmGRPC.Refresh) (*idmGRPC.A
 	}, nil
 }
 
-func (c *IdmRPC) IsValidAccess(ctx context.Context, in *idmGRPC.Access) (*idmGRPC.EmptyResponse, error) {
+func (c *IdmRPC) IsValidAccess(_ context.Context, in *idmGRPC.Access) (*idmGRPC.EmptyResponse, error) {
 	err := c.JWTService.IsValidAccess(in.Access)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 	return &idmGRPC.EmptyResponse{}, nil
 }
 
-func (c *IdmRPC) IsValidRefresh(ctx context.Context, in *idmGRPC.Refresh) (*idmGRPC.EmptyResponse, error) {
+func (c *IdmRPC) IsValidRefresh(_ context.Context, in *idmGRPC.Refresh) (*idmGRPC.EmptyResponse, error) {
 	err := c.JWTService.IsValidRefresh(in.Refresh)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 	return &idmGRPC.EmptyResponse{}, nil
 }
