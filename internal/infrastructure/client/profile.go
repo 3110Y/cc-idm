@@ -25,7 +25,7 @@ func NewProfileServiceClient() (*ProfileServiceClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := profileGRPC.NewProfileServiceClient(conn)
+	client := profileGRPC.NewProfileClient(conn)
 	return &ProfileServiceClient{
 			URI:                  os.Getenv("URL_PROFILE"),
 			ProfileServiceClient: client,
